@@ -1,0 +1,305 @@
+---
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="John Doe - Software Engineer Portfolio" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+	</head>
+	<body>
+		<canvas id="backgroundCanvas"></canvas>
+		<div class="noise"></div>
+		<div class="gradient-bg"></div>
+		<slot />
+		<script>
+			const canvas = document.getElementById('backgroundCanvas') as HTMLCanvasElement;
+			const ctx = canvas.getContext('2d');
+
+			let width = canvas.width = window.innerWidth;
+			let height = canvas.height = window.innerHeight;
+			let mouseX = width / 2;
+			let mouseY = height / 2;
+			let isMouseMoving = false;
+			let mouseTimer: number;
+
+			const particles: Particle[] = [];
+			const particleCount = 150;
+			const connectionDistance = 150;
+			const mouseRadius = 200;
+			const mouseAttraction = 0.05; // Strength of attraction to mouse
+			const returnSpeed = 0.02; // Speed of return to original position
+
+			class Particle {
+				x: number;
+				y: number;
+				vx: number;
+				vy: number;
+				size: number;
+				originalX: number;
+				originalY: number;
+				isNearMouse: boolean;
+				isGreen: boolean;
+				glowIntensity: number;
+				pulsePhase: number;
+
+				constructor() {
+					this.x = this.originalX = Math.random() * width;
+					this.y = this.originalY = Math.random() * height;
+					this.vx = 0;
+					this.vy = 0;
+					this.size = Math.random() * 3 + 1;
+					this.isNearMouse = false;
+					this.isGreen = Math.random() < 0.3;
+					this.glowIntensity = 0;
+					this.pulsePhase = Math.random() * Math.PI * 2;
+				}
+
+				update() {
+					const dx = mouseX - this.x;
+					const dy = mouseY - this.y;
+					const distance = Math.sqrt(dx * dx + dy * dy);
+					
+					this.isNearMouse = distance < mouseRadius;
+					this.pulsePhase += 0.02;
+					this.glowIntensity = Math.sin(this.pulsePhase) * 0.5 + 0.5;
+
+					if (this.isNearMouse && isMouseMoving) {
+						// Attract to mouse
+						const angle = Math.atan2(dy, dx);
+						const force = (mouseRadius - distance) / mouseRadius;
+						this.vx += Math.cos(angle) * force * mouseAttraction;
+						this.vy += Math.sin(angle) * force * mouseAttraction;
+					} else {
+						// Return to original position
+						const homeX = this.originalX - this.x;
+						const homeY = this.originalY - this.y;
+						this.vx += homeX * returnSpeed;
+						this.vy += homeY * returnSpeed;
+					}
+
+					// Apply velocity with damping
+					this.vx *= 0.95;
+					this.vy *= 0.95;
+
+					// Update position
+					this.x += this.vx;
+					this.y += this.vy;
+				}
+
+				draw() {
+					if (!ctx) return;
+					const baseColor = this.isGreen ? [34, 197, 94] : [150, 150, 150];
+					const glowColor = this.isGreen ? 
+						`rgba(34, 197, 94, ${0.1 + this.glowIntensity * 0.2})` :
+						`rgba(150, 150, 150, ${0.1 + this.glowIntensity * 0.1})`;
+					
+					const particleColor = `rgba(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]}, ${0.8 + this.glowIntensity * 0.2})`;
+					
+					// Glow effect
+					const gradient = ctx.createRadialGradient(
+						this.x, this.y, 0,
+						this.x, this.y, this.size * (this.isNearMouse ? 8 : 4)
+					);
+					gradient.addColorStop(0, glowColor);
+					gradient.addColorStop(1, 'rgba(0,0,0,0)');
+					
+					ctx.fillStyle = gradient;
+					ctx.beginPath();
+					ctx.arc(this.x, this.y, this.size * (this.isNearMouse ? 8 : 4), 0, Math.PI * 2);
+					ctx.fill();
+					
+					// Core particle
+					ctx.fillStyle = particleColor;
+					ctx.beginPath();
+					ctx.arc(this.x, this.y, 
+						this.size * (this.isNearMouse ? 1.5 : 1), 
+						0, Math.PI * 2);
+					ctx.fill();
+				}
+			}
+
+			for (let i = 0; i < particleCount; i++) {
+				particles.push(new Particle());
+			}
+
+			function drawConnections() {
+				if (!ctx) return;
+
+				ctx.lineWidth = 1;
+				particles.forEach((particleA, i) => {
+					// Draw connections between particles
+					particles.slice(i + 1).forEach(particleB => {
+						const dx = particleA.x - particleB.x;
+						const dy = particleA.y - particleB.y;
+						const distance = Math.sqrt(dx * dx + dy * dy);
+
+						if (distance < connectionDistance) {
+							const opacity = (1 - distance/connectionDistance) * 0.5;
+							const isGreenConnection = particleA.isGreen && particleB.isGreen;
+							
+							const gradient = ctx.createLinearGradient(
+								particleA.x, particleA.y,
+								particleB.x, particleB.y
+							);
+							
+							if (isGreenConnection) {
+								gradient.addColorStop(0, `rgba(34, 197, 94, ${opacity * particleA.glowIntensity})`);
+								gradient.addColorStop(1, `rgba(34, 197, 94, ${opacity * particleB.glowIntensity})`);
+							} else {
+								gradient.addColorStop(0, `rgba(150, 150, 150, ${opacity * particleA.glowIntensity})`);
+								gradient.addColorStop(1, `rgba(150, 150, 150, ${opacity * particleB.glowIntensity})`);
+							}
+							
+							ctx.strokeStyle = gradient;
+							ctx.beginPath();
+							ctx.moveTo(particleA.x, particleA.y);
+							ctx.lineTo(particleB.x, particleB.y);
+							ctx.stroke();
+						}
+					});
+
+					// Draw connections to mouse for nearby particles
+					if (particleA.isNearMouse && isMouseMoving) {
+						const dx = mouseX - particleA.x;
+						const dy = mouseY - particleA.y;
+						const distance = Math.sqrt(dx * dx + dy * dy);
+						const opacity = (1 - distance/mouseRadius) * 0.8;
+						
+						const gradient = ctx.createLinearGradient(
+							particleA.x, particleA.y,
+							mouseX, mouseY
+						);
+						
+						if (particleA.isGreen) {
+							gradient.addColorStop(0, `rgba(34, 197, 94, ${opacity * particleA.glowIntensity})`);
+							gradient.addColorStop(1, `rgba(34, 197, 94, ${opacity * 0.3})`);
+						} else {
+							gradient.addColorStop(0, `rgba(150, 150, 150, ${opacity * particleA.glowIntensity})`);
+							gradient.addColorStop(1, `rgba(150, 150, 150, ${opacity * 0.3})`);
+						}
+						
+						ctx.strokeStyle = gradient;
+						ctx.lineWidth = 2;
+						ctx.beginPath();
+						ctx.moveTo(particleA.x, particleA.y);
+						ctx.lineTo(mouseX, mouseY);
+						ctx.stroke();
+					}
+				});
+			}
+
+			function animate() {
+				if (!ctx) return;
+				ctx.clearRect(0, 0, width, height);
+
+				particles.forEach(particle => {
+					particle.update();
+					particle.draw();
+				});
+
+				drawConnections();
+				requestAnimationFrame(animate);
+			}
+
+			document.addEventListener('mousemove', (e) => {
+				mouseX = e.clientX;
+				mouseY = e.clientY;
+				isMouseMoving = true;
+				clearTimeout(mouseTimer);
+				mouseTimer = setTimeout(() => {
+					isMouseMoving = false;
+				}, 100);
+			});
+
+			window.addEventListener('resize', () => {
+				width = canvas.width = window.innerWidth;
+				height = canvas.height = window.innerHeight;
+				
+				particles.length = 0;
+				for (let i = 0; i < particleCount; i++) {
+					particles.push(new Particle());
+				}
+			});
+
+			animate();
+		</script>
+	</body>
+</html>
+<style is:global>
+	:root {
+		--accent: 124, 58, 237;
+		--accent-light: 224, 204, 250;
+		--accent-dark: 49, 10, 101;
+		--biotech: 34, 197, 94;
+		--biotech-light: 187, 247, 208;
+		--biotech-dark: 21, 128, 61;
+		--coding: 128, 128, 128;
+		--coding-light: 180, 180, 180;
+		--background: 19, 21, 26;
+		--text: 236, 237, 238;
+	}
+	html {
+		font-family: 'Space Grotesk', system-ui, sans-serif;
+		background: rgb(var(--background));
+		color: rgb(var(--text));
+		scroll-behavior: smooth;
+	}
+
+	body {
+		margin: 0;
+		min-height: 100vh;
+		position: relative;
+		overflow-x: hidden;
+	}
+
+	#backgroundCanvas {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: -2;
+		opacity: 0.7;
+	}
+
+	.noise {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: url('data:image/png;base64,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');
+		opacity: 0.05;
+		z-index: -1;
+	}
+
+	.gradient-bg {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: radial-gradient(circle at top right, rgba(var(--biotech), 0.15), transparent 50%),
+					radial-gradient(circle at bottom left, rgba(var(--coding), 0.1), transparent 50%),
+					radial-gradient(circle at center, rgba(var(--biotech), 0.05), transparent 50%);
+		z-index: -3;
+	}
+
+	::selection {
+		background: rgba(var(--biotech), 0.3);
+		color: rgb(var(--text));
+	}
+</style>

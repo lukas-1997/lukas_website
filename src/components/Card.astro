@@ -1,0 +1,103 @@
+---
+interface Props {
+	title: string;
+	body: string;
+	href: string;
+}
+
+const { href, title, body } = Astro.props;
+---
+
+<a href={href} class="card">
+	<div class="card-content">
+		<h3>{title}</h3>
+		<p>{body}</p>
+		<span class="link">View Project →</span>
+	</div>
+	<div class="card-bg"></div>
+</a>
+
+<style>
+	.card {
+		position: relative;
+		display: block;
+		padding: 2rem;
+		background: rgba(var(--coding), 0.15);
+		border-radius: 1rem;
+		color: rgb(var(--text));
+		text-decoration: none;
+		transition: all 0.3s ease;
+		overflow: hidden;
+		backdrop-filter: blur(10px);
+		border: 1px solid rgba(var(--coding), 0.2);
+	}
+
+	.card-content {
+		position: relative;
+		z-index: 1;
+	}
+
+	.card-bg {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: radial-gradient(
+			800px circle at var(--mouse-x) var(--mouse-y),
+			rgba(var(--biotech), 0.15),
+			transparent 40%
+		);
+		opacity: 0;
+		transition: opacity 0.3s;
+	}
+
+	.card:hover {
+		transform: translateY(-5px);
+		background: rgba(var(--coding), 0.2);
+	}
+
+	.card:hover .card-bg {
+		opacity: 1;
+	}
+
+	h3 {
+		font-size: 1.3rem;
+		margin-bottom: 1rem;
+		color: rgb(var(--biotech-light));
+		font-weight: 600;
+		transition: color 0.3s ease;
+	}
+
+	p {
+		color: rgba(var(--text), 0.9);
+		margin-bottom: 1.5rem;
+		line-height: 1.6;
+	}
+
+	.link {
+		color: rgb(var(--biotech));
+		font-weight: 500;
+		transition: color 0.3s ease;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.card:hover .link {
+		color: rgb(var(--biotech-light));
+	}
+</style>
+
+<script>
+	document.querySelectorAll('.card').forEach(card => {
+		card.addEventListener('mousemove', e => {
+			const rect = card.getBoundingClientRect();
+			const x = e.clientX - rect.left;
+			const y = e.clientY - rect.top;
+
+			card.style.setProperty('--mouse-x', `${x}px`);
+			card.style.setProperty('--mouse-y', `${y}px`);
+		});
+	});
+</script>

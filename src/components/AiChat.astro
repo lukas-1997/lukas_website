@@ -1,0 +1,270 @@
+---
+---
+
+<div class="ai-chat-container">
+  <button id="aiChatButton" class="ai-chat-button" aria-label="Ask AI">
+    Ask AI
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  </button>
+
+  <div id="aiChatWindow" class="ai-chat-window hidden">
+    <div class="ai-chat-header">
+      <h3>Ask AI Assistant</h3>
+      <button id="closeChat" class="close-button" aria-label="Close chat">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="ai-chat-messages" id="aiChatMessages">
+      <div class="message assistant">
+        <div class="message-content">
+          Hi! I'm Lukas's AI assistant. How can I help you?
+        </div>
+      </div>
+    </div>
+    <div class="ai-chat-input">
+      <textarea 
+        id="userInput" 
+        placeholder="Type your message..." 
+        rows="1"
+        disabled
+      ></textarea>
+      <button id="sendMessage" class="send-button" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ai-chat-container {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 1000;
+  }
+
+  .ai-chat-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: rgb(var(--biotech));
+    color: rgb(var(--background));
+    border: none;
+    border-radius: 2rem;
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(var(--biotech), 0.3);
+  }
+
+  .ai-chat-button:hover {
+    background: rgb(var(--biotech-light));
+    transform: translateY(-2px);
+  }
+
+  .ai-chat-button svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .ai-chat-window {
+    position: fixed;
+    bottom: 5rem;
+    right: 2rem;
+    width: 380px;
+    height: 600px;
+    background: rgba(var(--background), 0.95);
+    border: 1px solid rgba(var(--biotech), 0.2);
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .ai-chat-window.hidden {
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+  }
+
+  .ai-chat-header {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(var(--biotech), 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ai-chat-header h3 {
+    margin: 0;
+    color: rgb(var(--text));
+    font-size: 1.1rem;
+  }
+
+  .close-button {
+    background: none;
+    border: none;
+    color: rgb(var(--text));
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+  }
+
+  .close-button:hover {
+    opacity: 1;
+  }
+
+  .close-button svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .ai-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .message {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 85%;
+  }
+
+  .message.assistant {
+    align-self: flex-start;
+  }
+
+  .message.user {
+    align-self: flex-end;
+  }
+
+  .message-content {
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+
+  .message.assistant .message-content {
+    background: rgba(var(--biotech), 0.1);
+    color: rgb(var(--text));
+    border-top-left-radius: 0;
+  }
+
+  .message.user .message-content {
+    background: rgb(var(--biotech));
+    color: rgb(var(--background));
+    border-top-right-radius: 0;
+  }
+
+  .ai-chat-input {
+    padding: 1rem;
+    border-top: 1px solid rgba(var(--biotech), 0.2);
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  textarea {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid rgba(var(--biotech), 0.2);
+    border-radius: 0.5rem;
+    background: rgba(var(--text), 0.05);
+    color: rgb(var(--text));
+    font-family: inherit;
+    font-size: 0.95rem;
+    resize: none;
+    transition: all 0.3s ease;
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: rgb(var(--biotech));
+    background: rgba(var(--text), 0.1);
+  }
+
+  textarea::placeholder {
+    color: rgba(var(--text), 0.5);
+  }
+
+  .send-button {
+    background: rgb(var(--biotech));
+    border: none;
+    border-radius: 0.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .send-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .send-button svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: rgb(var(--background));
+  }
+
+  .send-button:not(:disabled):hover {
+    background: rgb(var(--biotech-light));
+  }
+
+  @media (max-width: 768px) {
+    .ai-chat-window {
+      width: calc(100% - 2rem);
+      height: calc(100% - 5rem);
+      right: 1rem;
+      bottom: 5rem;
+    }
+  }
+</style>
+
+<script>
+  const aiChatButton = document.getElementById('aiChatButton');
+  const aiChatWindow = document.getElementById('aiChatWindow');
+  const closeChat = document.getElementById('closeChat');
+  const userInput = document.getElementById('userInput') as HTMLTextAreaElement;
+  const sendMessage = document.getElementById('sendMessage');
+  const aiChatMessages = document.getElementById('aiChatMessages');
+
+  aiChatButton?.addEventListener('click', () => {
+    aiChatWindow?.classList.toggle('hidden');
+  });
+
+  closeChat?.addEventListener('click', () => {
+    aiChatWindow?.classList.add('hidden');
+  });
+
+  // Auto-resize textarea
+  userInput?.addEventListener('input', () => {
+    userInput.style.height = 'auto';
+    userInput.style.height = userInput.scrollHeight + 'px';
+  });
+</script>
